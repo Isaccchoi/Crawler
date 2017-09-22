@@ -32,5 +32,7 @@ def get_webtoon_list():
     webtoon_list = list(webtoon_list)
     webtoon_list = sorted(list(webtoon_list), key=lambda x: x.title)
 
+    for webtoon in webtoon_list:
+        print(webtoon.title)
 
-get_webtoon_list()
+# print(get_webtoon_list())

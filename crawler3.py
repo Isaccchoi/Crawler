@@ -31,10 +31,41 @@ webtoon_p = 696617
 
 
 class NaverWebtoonCrawler:
-    def __init__(self, webtoon_id):
-        self.webtoon_id = webtoon_id
+    def __init__(self, webtoon_title=None):
+        """
+        1. webtoon_title이 주어지면
+            1-1 해당 웹툰 검색결과를 가져와서
+            1-2 검색결과가 1개면 해당 웹툰을
+                self.webtoon에 할당
+            1-3 검색 결과가 2개 이상이면 선택 가능하도록 목록을 보여주고
+                input으로 입력 받음
+            1-4 검색 결과가 없으면 다시 웹툰 검색하도록 함
+        2. webtoon_title이 주어지지 않으면
+            2-1. 웹툰 검색을 할 수 있는 input을 띄워줌
+            2-1 이후는 1-2, 1-3을 따라감
+
+        3. webtoon_id를 쓰던 코드를 전부 수정 (self.webtoon)을 사용
+            self.webtoon은 webtoon타입 namedtuple
+        """
+        if webtoon_title:
+            while True:
+                find_result = self.find_webtoon(webtoon_title)
+                if len(find_result) < 1:
+                    webtoon_title = input("결과가 없습니다. 다시 입력하세요.: ")
+                    continue
+                elif len(find_result) == 1:
+                    self.webtoon = find_result[0]
+                    break
+                else:
+                    for i, webtoon in enumerate(find_result):
+                        print(f"{i+1}번. 제목: {webtoon.title}")
+                    print("결과가 어려개 입니다 번호를 골라 입력하시오.")
+                    sel_num = input()
+                    self.webtoon = find_result[int(sel_num)-1]
+                    break
         self.episode_list = list()
         self.load(init=True)
+        print(f"{self.webtoon}")
 
     @property
     def total_episode_count(self):
@@ -43,7 +74,7 @@ class NaverWebtoonCrawler:
         requests를 사용
         :return: 총 episode수 (int)
         """
-        el = utils.get_webtoon_episode_list(self.webtoon_id)
+        el = utils.get_webtoon_episode_list(self.webtoon.title_id)
         return int(el[0].no)
 
     @property
@@ -55,7 +86,7 @@ class NaverWebtoonCrawler:
         # total_episode_count = 웹상에 올라와 있는 갯수
         # total_episode_count = self.total_episode_count
         # cur_episode_count = 로컬상에 있는 갯수
-        # cur_episode_count = utils.get_last_episode_local(self.webtoon_id)
+        # cur_episode_count = utils.get_last_episode_local(self.webtoon.title_id)
         # 로컬상과 웹상이 같으면 True, 다르면 False
         # return total_episode_count == cur_episode_count
         return self.total_episode_count == len(self.episode_list)
@@ -80,7 +111,7 @@ class NaverWebtoonCrawler:
         while True:
             print('Get webtoon episode list(Loop %s)' % page)
             # 게속해서 증가하는 'page'를 이용해 다음 episode 리스트들을 가져옴
-            el = utils.get_webtoon_episode_list(self.webtoon_id, page)
+            el = utils.get_webtoon_episode_list(self.webtoon.title_id, page)
             for episode in el:
                 # 각 episode의 no가 recent episode_no보다 클 경우
                 # self.episode_list에 추가
@@ -123,19 +154,19 @@ class NaverWebtoonCrawler:
         return utils.get_webtoon_list()
 
     def get_last_page_episode_list(self):
-        el = utils.get_webtoon_episode_list(self.webtoon_id, 99999)
+        el = utils.get_webtoon_episode_list(self.webtoon.title_id, 99999)
         self.episode_list = el
         return len(self.episode_list)
 
     def load(self, path=None, init=False):
         """
-        현재폴더를 기준으로 db/<webtoon_id>.txt 파일의 내용을 불러와
+        현재폴더를 기준으로 db/<webtoon.title_id>.txt 파일의 내용을 불러와
         pickle로 self.episode_list를 복원
         :return:
         """
         try:
             if not path:
-                path = f"./db/{self.webtoon_id}.txt"
+                path = f"./db/{self.webtoon.title_id}.txt"
             self.episode_list = pickle.load(open(path, 'rb'))
         except FileNotFoundError:
             if not init:
@@ -144,9 +175,9 @@ class NaverWebtoonCrawler:
     def make_list_html(self):
         """
         self.episode_list를 HTML파일로 만들어준다
-        webtoon/{webtoon_id}.html
+        webtoon/{webtoon.title_id}.html
         1. webtoon폴더 있는지 검사 후 생성
-        2. webtoon/{webtoon_id}.html 파일객체 할당 또는 with문으로 open
+        2. webtoon/{webtoon.title_id}.html 파일객체 할당 또는 with문으로 open
         3. open한 파일에 HTML앞부분 작성
         4. episode_list를 for문돌며 <tr>...</tr>부분 반복작성
         5. HTML뒷부분 작성
@@ -176,7 +207,7 @@ class NaverWebtoonCrawler:
         # webtoon/ 폴더 존재하는지 확인 후 없으면 생성
         if not os.path.isdir('webtoon'):
             os.mkdir('webtoon')
-        filename = f'webtoon/{self.webtoon_id}.html'
+        filename = f'webtoon/{self.webtoon.title_id}.html'
         with open(filename, 'wt') as f:
             # HTML 앞부분 작성
             f.write(utils.LIST_HTML_HEAD)
@@ -184,7 +215,7 @@ class NaverWebtoonCrawler:
             # episode_list순회하며 나머지 코드 작성
             for e in self.episode_list:
                 f.write(utils.LIST_HTML_TR.format(
-                    image_url=f'./{self.webtoon_id}_thumbnail/{e.no}.jpg',
+                    image_url=f'./{self.webtoon.title_id}_thumbnail/{e.no}.jpg',
                     title=e.title,
                     rate=e.rate,
                     date=e.date
@@ -195,13 +226,13 @@ class NaverWebtoonCrawler:
 
     def save_list_thumbnail(self):
         """
-        webtoon/{webtoon_id}_thumbnail/<episode_no>.jpg
-        1. webtoon/{webtoon_id}_thumbnail이라는 폴더가 존재하는지 확인 후 생성
+        webtoon/{webtoon.title_id}_thumbnail/<episode_no>.jpg
+        1. webtoon/{webtoon.title_id}_thumbnail이라는 폴더가 존재하는지 확인 후 생성
         2. self.episode_list를 순회하며 각 episode의 img_url경로의 파일을 저장
         :return: 저장한 thumbnail개수
         """
-        # webtoon/{self.webtoon_id}에 해당하는 폴더 생성
-        thumbnail_dir = f'webtoon/{self.webtoon_id}_thumbnail'
+        # webtoon/{self.webtoon.title_id}에 해당하는 폴더 생성
+        thumbnail_dir = f'webtoon/{self.webtoon.title_id}_thumbnail'
         os.makedirs(thumbnail_dir, exist_ok=True)
 
         # 각 episode의 img_url속성에 해당하는 이미지를 다운로드
@@ -214,7 +245,7 @@ class NaverWebtoonCrawler:
 
     def save(self, path=None):
         """
-        현재폴더를 기준으로 db/<webtoon_id>.txt 파일에
+        현재폴더를 기준으로 db/<webtoon.title_id>.txt 파일에
         pickle로 self.episode_list를 저장
         :return: 성공여부
         """
@@ -222,15 +253,15 @@ class NaverWebtoonCrawler:
             path = "db"
         if not os.path.isdir(path):
             os.mkdir(path)
-        pickle.dump(self.episode_list, open(f"./{path}/{self.webtoon_id}.txt", 'wb'))
+        pickle.dump(self.episode_list, open(f"./{path}/{self.webtoon.title_id}.txt", 'wb'))
 
 
-nwc = NaverWebtoonCrawler(webtoon_p)
+nwc = NaverWebtoonCrawler("피에는 피피피")
 # print(nwc.episode_list)
 # nwc.update_episode_list()
 # nwc.save_list_thumbnail()
 # nwc.make_list_html()
-print(nwc.find_webtoon("선"))
+# print(nwc.find_webtoon("선"))
 
 # print(nwc.load())
 # print(nwc.episode_list)
