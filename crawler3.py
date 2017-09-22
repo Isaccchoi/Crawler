@@ -47,6 +47,7 @@ class NaverWebtoonCrawler:
         3. webtoon_id를 쓰던 코드를 전부 수정 (self.webtoon)을 사용
             self.webtoon은 webtoon타입 namedtuple
         """
+        self.webtoon = None
         if webtoon_title:
             while True:
                 find_result = self.find_webtoon(webtoon_title)
@@ -57,15 +58,20 @@ class NaverWebtoonCrawler:
                     self.webtoon = find_result[0]
                     break
                 else:
-                    for i, webtoon in enumerate(find_result):
-                        print(f"{i+1}번. 제목: {webtoon.title}")
-                    print("결과가 어려개 입니다 번호를 골라 입력하시오.")
-                    sel_num = input()
-                    self.webtoon = find_result[int(sel_num)-1]
+                    while True:
+                        for i, webtoon in enumerate(find_result):
+                            print(f"{i+1}번. 제목: {webtoon.title}")
+                        try:
+                            sel_num = input("결과가 어려개 입니다 번호를 골라 입력하시오.")
+                            self.webtoon = find_result[int(sel_num)-1]
+                            break
+                        except IndexError:
+                            print(f'\n  {len(find_result)} 번 이하의 숫자를 선택해주세요 \n')
+                        except ValueError:
+                            print("\n  해당 웹툰의 숫자를 입력해주세요")
                     break
         self.episode_list = list()
         self.load(init=True)
-        print(f"{self.webtoon}")
 
     @property
     def total_episode_count(self):
@@ -103,6 +109,9 @@ class NaverWebtoonCrawler:
         :param force_update: 이미 존재하는 episode도 강제로 업데이트
         :return: 추가된 episode의 수 (int)
         """
+
+        if force_update:
+            self.episode_list = list()
         # recent_episode_no = self.episode_list[0].split('|')[0]
         recent_episode_no = self.episode_list[0].no if self.episode_list else 0
         print('-Update episode list start(Recent episode no: %s)' % recent_episode_no)
@@ -111,7 +120,7 @@ class NaverWebtoonCrawler:
         while True:
             print('Get webtoon episode list(Loop %s)' % page)
             # 게속해서 증가하는 'page'를 이용해 다음 episode 리스트들을 가져옴
-            el = utils.get_webtoon_episode_list(self.webtoon.title_id, page)
+            el = utils.get_webtoon_episode_list(self.webtoon, page)
             for episode in el:
                 # 각 episode의 no가 recent episode_no보다 클 경우
                 # self.episode_list에 추가
@@ -131,6 +140,16 @@ class NaverWebtoonCrawler:
             break
         self.episode_list = new_list + self.episode_list
         return len(new_list)
+
+    def get_episode_detail(self, episode):
+        """
+        주어진 Episode의 상세 페이지를 크롤링
+            1. 상세 페이지를 parsing해서 img태그들의 src속성들을 가져옴
+            2.
+        :param episode:
+        :return:
+        """
+
 
     def find_webtoon(self, title):
         """
@@ -154,7 +173,7 @@ class NaverWebtoonCrawler:
         return utils.get_webtoon_list()
 
     def get_last_page_episode_list(self):
-        el = utils.get_webtoon_episode_list(self.webtoon.title_id, 99999)
+        el = utils.get_webtoon_episode_list(self.webtoon, 99999)
         self.episode_list = el
         return len(self.episode_list)
 
@@ -256,7 +275,7 @@ class NaverWebtoonCrawler:
         pickle.dump(self.episode_list, open(f"./{path}/{self.webtoon.title_id}.txt", 'wb'))
 
 
-nwc = NaverWebtoonCrawler("피에는 피피피")
+# nwc = NaverWebtoonCrawler("피에는 피피피")
 # print(nwc.episode_list)
 # nwc.update_episode_list()
 # nwc.save_list_thumbnail()

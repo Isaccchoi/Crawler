@@ -3,14 +3,17 @@ from urllib.parse import urlparse, parse_qs
 from bs4 import BeautifulSoup
 from collections import namedtuple
 
-Episode = namedtuple('Episode', ['no', 'image_url', 'title', 'rate', 'date'])
+from episode import Episode
+
+
+# Episode = namedtuple('Episode', ['no', 'image_url', 'title', 'rate', 'date'])
 Webtoon = namedtuple('Webtoon', ['title_id', 'image_url', 'title'])
 base_url = "http://comic.naver.com/webtoon/list.nhn?"
 webtoon_home = "http://comic.naver.com/webtoon/weekday.nhn"
 
-def get_webtoon_episode_list(webtoon_id, page=1):
+def get_webtoon_episode_list(webtoon, page=1):
     params = {
-        'titleId': webtoon_id,
+        'titleId': webtoon.title_id,
         'page': page,
     }
     response = requests.get(base_url, params=params)
@@ -42,7 +45,7 @@ def get_webtoon_episode_list(webtoon_id, page=1):
         date = tr.select_one('td.num').get_text(strip=True)
         # date = td_date.get_text(strip=True)
         # print(date)
-        p = Episode(no, image, title, rate, date)
+        p = Episode(webtoon, no, image, title, rate, date)
         episode_list.append(p)
     return episode_list
 
