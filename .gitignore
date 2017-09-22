@@ -269,3 +269,4 @@ venv.bak/
 # custom
 */,idea/*
 /db/*
+/webtoon/*
