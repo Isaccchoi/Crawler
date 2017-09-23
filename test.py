@@ -35,4 +35,4 @@ def get_webtoon_list():
     for webtoon in webtoon_list:
         print(webtoon.title)
 
-# print(get_webtoon_list())
+# print(get_webtoon_list())ㄷ
