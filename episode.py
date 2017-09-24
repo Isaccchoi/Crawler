@@ -122,11 +122,11 @@ class Episode:
                 f.write(response.content)
 
     def _make_html(self):
-        pass
+
 
 
 if __name__ == '__main__':
     el = pickle.load(open('db/697680.txt', 'rb'))
-    e = el[0]
-    e.save_image()
-    e.save_thumbnail()
+    for e in el:
+        e._save_images()
+        e.save_thumbnail()

@@ -162,6 +162,25 @@ class NaverWebtoonCrawler:
         webtoon_list = sorted(list(webtoon_list), key=lambda webtoon: webtoon.title)
         return webtoon_list
 
+    def make_index_html(self):
+        webtoon_list = self.get_webtoon_list()
+        if not os.path.isdir('webtoon'):
+            os.mkdir('webtoon')
+        filename = f'webtoon/index.html'
+        with open(filename, 'wt') as f:
+            index_html_head = open('html/index_head.html', 'rt').read()
+            f.write(index_html_head)
+            for webtoon in webtoon_list:
+                index_tr = open('html/index_tr.html', 'rt').read()
+                f.write(index_tr.format(
+                    img_url=f'{webtoon.img_url}',
+                    title=f'{webtoon.title}',
+                    title_id=f'./{webtoon.title_id}.html',
+                ))
+            index_tail = open('html/index_tail.html', 'rt').read()
+            f.write(index_tail)
+        return True
+
     def update_episode_list(self, force_update=False):
         """
         1. recent_episode_no = self.episode_list에서 가장 최신화의 no
@@ -323,5 +342,6 @@ class NaverWebtoonCrawler:
 
 if __name__ == '__main__':
     crawler = NaverWebtoonCrawler('선천적')
-    crawler.update_episode_list()
-    crawler.make_list_html()
+    crawler.make_index_html()
+    # crawler.update_episode_list()
+    # crawler.make_list_html()
