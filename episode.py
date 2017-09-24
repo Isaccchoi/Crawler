@@ -122,11 +122,28 @@ class Episode:
                 f.write(response.content)
 
     def _make_html(self):
-
-
+        if not os.path.isdir(f'webtoon/{self.webtoon.title_id}'):
+            os.mkdir(f'webtoon/{self.webtoon.title_id}')
+        dir_list = os.listdir(f'webtoon/{self.webtoon.title_id}_images')
+        # .DS_Store를 포함하면 갯수가 한 개 많으나 range함수는 마지막자리의 앞자리 까지만 순화하므로 그대로 len 사용
+        for dir_no in range(1, len(dir_list)):
+            filename = f'webtoon/{self.webtoon.title_id}/{dir_no}.html'
+            with open(filename, 'wt') as f:
+                episode_head = open('html/episode_head.html', 'rt').read()
+                f.write(episode_head)
+                for no in range(1, len(os.listdir(f'webtoon/{self.webtoon.title_id}_images/{dir_no}'))):
+                    episode_images = open('html/episode_images.html' , 'rt').read()
+                    f.write(episode_images.format(
+                        img_url= f'../{self.webtoon.title_id}_images/{dir_no}/{no}.jpg',
+                    ))
+                episode_tail = open('html/episode_tail.html', 'rt').read()
+                f.write(episode_tail)
+        return True
 
 if __name__ == '__main__':
     el = pickle.load(open('db/697680.txt', 'rb'))
-    for e in el:
-        e._save_images()
-        e.save_thumbnail()
+    # for e in el:
+    #     e._save_images()
+    #     e.save_thumbnail()
+    e = el[0]
+    e._make_html()

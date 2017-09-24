@@ -332,7 +332,8 @@ class NaverWebtoonCrawler:
                     img_url=f'./{self.webtoon.title_id}_thumbnail/{e.no}.jpg',
                     title=e.title,
                     rating=e.rating,
-                    created_date=e.created_date
+                    created_date=e.created_date,
+                    episode_url = f'./{self.webtoon.title_id}/{e.no}.html',
                 ))
             # HTML 뒷부분 작성
             list_html_tail = open('html/list_html_tail.html', 'rt').read()
@@ -343,5 +344,6 @@ class NaverWebtoonCrawler:
 if __name__ == '__main__':
     crawler = NaverWebtoonCrawler('선천적')
     crawler.make_index_html()
+    crawler.make_list_html()
     # crawler.update_episode_list()
     # crawler.make_list_html()
